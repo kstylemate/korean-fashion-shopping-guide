@@ -1,0 +1,1971 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>몽골어 AI 쇼핑 가이드 — 시범 MVP (PC)</title>
+
+  <!-- 첨부 이미지와 동일한 Pretendard 폰트 + 몽골어 키릴 문자용 Noto Sans -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --blue-vivid: #0066ff;
+      --blue-deep: #0050d4;
+      --blue-sky: #cce3ff;
+      --blue-ice: #eef5ff;
+      --blue-border: #bfd9ff;
+
+      --bg-page: #ffffff;
+      --bg-subtle: #f6f8fc;
+      --text-main: #0f172a;
+      --text-sub: #475569;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --border-strong: #cbd5e1;
+
+      --warn-bg: #fffbeb;
+      --warn-border: #fde68a;
+      --warn-text: #92400e;
+      --success-bg: #f0fdf4;
+      --success-border: #bbf7d0;
+      --success-text: #166534;
+
+      --container-max: 1140px;
+      --radius-xl: 22px;
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+
+      --font-sans: "Pretendard Variable", Pretendard, "Noto Sans", -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      font-family: var(--font-sans);
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    button, input {
+      font-family: inherit;
+    }
+
+    .container {
+      width: 100%;
+      max-width: var(--container-max);
+      margin: 0 auto;
+      padding: 0 28px;
+    }
+
+    /* 1. PC 플로팅 내비게이션 (로그인·결제 제외, 스크롤 진행률 포함) */
+    .floating-nav-wrap {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 48px);
+      max-width: 1084px;
+      z-index: 50;
+      pointer-events: none;
+    }
+
+    .floating-nav {
+      pointer-events: auto;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.75);
+      box-shadow: 0 12px 32px rgba(0, 42, 115, 0.12);
+      border-radius: 999px;
+      padding: 10px 14px 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--text-main);
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .nav-logo-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--blue-vivid);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .nav-tag {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      padding: 3px 8px;
+      border-radius: 999px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .nav-pill {
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-sub);
+      padding: 7px 14px;
+      border-radius: 999px;
+      transition: all 0.2s ease;
+    }
+
+    .nav-pill:hover {
+      color: var(--blue-vivid);
+      background: var(--blue-ice);
+    }
+
+    .nav-pill.active {
+      background: var(--blue-vivid);
+      color: #ffffff;
+    }
+
+    .scroll-progress-bar {
+      position: absolute;
+      left: 24px;
+      right: 24px;
+      bottom: 0;
+      height: 2.5px;
+      background: rgba(0, 102, 255, 0.12);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .scroll-progress-fill {
+      width: 0%;
+      height: 100%;
+      background: var(--blue-vivid);
+      transition: width 0.1s linear;
+    }
+
+    section {
+      scroll-margin-top: 96px;
+      position: relative;
+    }
+
+    /* 2. PC 히어로 섹션 (첨부 이미지 구도: 좌측 빅 히어로 타입 · 우측 원형 받침대 위 티셔츠) */
+    .hero {
+      background: linear-gradient(145deg, #0072ff 0%, #0058e6 100%);
+      color: #ffffff;
+      padding: 132px 0 68px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-dots {
+      position: absolute;
+      right: 4%;
+      bottom: 24px;
+      width: 300px;
+      height: 150px;
+      background-image: radial-gradient(rgba(255, 255, 255, 0.24) 2.2px, transparent 2.2px);
+      background-size: 20px 20px;
+      pointer-events: none;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.25fr 0.9fr;
+      gap: 48px;
+      align-items: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 18px;
+      opacity: 0;
+      transform: translateY(12px);
+      animation: heroFadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.05s forwards;
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #93c5fd;
+      box-shadow: 0 0 0 0 rgba(147, 197, 253, 0.75);
+      animation: pulseDot 2s infinite;
+    }
+
+    /* 빅 히어로 타입 효과 */
+    .hero-big-type {
+      font-size: clamp(36px, 4vw, 52px);
+      font-weight: 800;
+      line-height: 1.22;
+      letter-spacing: -0.03em;
+      word-break: keep-all;
+      margin-bottom: 20px;
+    }
+
+    .hero-line {
+      display: block;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    .hero-line:nth-child(1) {
+      animation: heroFadeUp 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.12s forwards;
+    }
+
+    .hero-line:nth-child(2) {
+      animation: heroFadeUp 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.22s forwards;
+    }
+
+    .hero-line:nth-child(3) {
+      animation: heroFadeUp 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.32s forwards;
+    }
+
+    .hero-highlight {
+      display: inline-block;
+      color: #ffffff;
+      background: linear-gradient(transparent 64%, rgba(255, 255, 255, 0.24) 64%);
+      padding-right: 6px;
+    }
+
+    .hero-sub {
+      font-size: 18px;
+      font-weight: 400;
+      line-height: 1.65;
+      color: rgba(255, 255, 255, 0.92);
+      max-width: 560px;
+      word-break: keep-all;
+      margin-bottom: 32px;
+      opacity: 0;
+      transform: translateY(14px);
+      animation: heroFadeUp 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.42s forwards;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      opacity: 0;
+      transform: translateY(14px);
+      animation: heroFadeUp 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.5s forwards;
+    }
+
+    .hero-cta-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 28px;
+      min-height: 54px;
+      background: #ffffff;
+      color: var(--blue-vivid);
+      font-size: 16px;
+      font-weight: 800;
+      text-decoration: none;
+      border-radius: var(--radius-md);
+      box-shadow: 0 12px 28px rgba(0, 34, 102, 0.24);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .hero-cta-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 32px rgba(0, 34, 102, 0.3);
+    }
+
+    .hero-secondary-link {
+      color: rgba(255, 255, 255, 0.9);
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      transition: background-color 0.15s ease;
+    }
+
+    .hero-secondary-link:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    /* 우측 원형 받침대 + 심플 티셔츠 일러스트 */
+    .hero-visual {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      transform: translateY(18px);
+      animation: heroFadeUp 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.38s forwards;
+    }
+
+    .shirt-svg {
+      width: 100%;
+      max-width: 350px;
+      height: auto;
+      overflow: visible;
+    }
+
+    .shirt-float {
+      animation: floatShirt 3.4s ease-in-out infinite;
+      transform-origin: center;
+    }
+
+    .shirt-shadow {
+      animation: pulseShadow 3.4s ease-in-out infinite;
+      transform-origin: 110px 108px;
+    }
+
+    /* 모션 큐: 스크롤 유도 */
+    .scroll-cue {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 46px;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 13px;
+      font-weight: 600;
+      position: relative;
+      z-index: 2;
+    }
+
+    .scroll-cue-arrow {
+      display: inline-block;
+      animation: bounceCue 1.6s ease-in-out infinite;
+    }
+
+    /* 스크롤 스토리텔링 Reveal */
+    .story-reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1), transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .story-reveal.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .section-pad {
+      padding: 84px 0;
+    }
+
+    .chapter-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--blue-vivid);
+      background: var(--blue-ice);
+      padding: 6px 12px;
+      border-radius: 999px;
+      margin-bottom: 14px;
+    }
+
+    .section-heading {
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: var(--text-main);
+      margin-bottom: 28px;
+      word-break: keep-all;
+    }
+
+    /* 3. Problem: PC 2열 인터랙티브 카드 */
+    .problem-section {
+      background: var(--bg-page);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .problem-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .interactive-card {
+      background: var(--bg-subtle);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 28px;
+      cursor: pointer;
+      transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease, background-color 0.22s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      user-select: none;
+    }
+
+    .interactive-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--blue-border);
+      box-shadow: 0 14px 30px rgba(0, 102, 255, 0.08);
+    }
+
+    .interactive-card.is-active {
+      background: var(--blue-ice);
+      border-color: var(--blue-vivid);
+      box-shadow: 0 14px 32px rgba(0, 102, 255, 0.12);
+    }
+
+    .card-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-icon-box {
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--blue-vivid);
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .interactive-card.is-active .card-icon-box {
+      background: var(--blue-vivid);
+      color: #ffffff;
+      border-color: var(--blue-vivid);
+    }
+
+    .card-index {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .interactive-card.is-active .card-index {
+      color: var(--blue-vivid);
+    }
+
+    .card-copy {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-main);
+      line-height: 1.55;
+      word-break: keep-all;
+    }
+
+    /* 4. How it works: PC 3열 가로 스토리텔링 타임라인 */
+    .how-section {
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .story-steps-grid {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .story-steps-grid::before {
+      content: "";
+      position: absolute;
+      left: 40px;
+      right: 40px;
+      top: 42px;
+      height: 2px;
+      background: var(--border-strong);
+      z-index: 0;
+    }
+
+    .story-step-card {
+      position: relative;
+      z-index: 1;
+      background: var(--bg-page);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 26px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+    }
+
+    .story-step-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--blue-border);
+      box-shadow: 0 14px 28px rgba(0, 102, 255, 0.08);
+    }
+
+    .story-step-card.is-active {
+      border-color: var(--blue-vivid);
+      box-shadow: 0 14px 30px rgba(0, 102, 255, 0.12);
+    }
+
+    .step-badge {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--blue-ice);
+      border: 3px solid #ffffff;
+      color: var(--blue-vivid);
+      font-size: 14px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .story-step-card.is-active .step-badge {
+      background: var(--blue-vivid);
+      color: #ffffff;
+      box-shadow: 0 0 0 5px rgba(0, 102, 255, 0.16);
+    }
+
+    .step-body {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-main);
+      line-height: 1.6;
+      word-break: keep-all;
+    }
+
+    /* 5. 핵심 작동 기능: PC 2열 분할 워크벤치 (좌측 입력 · 우측 실시간 결과) */
+    .tool-section {
+      background: var(--bg-page);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .workbench-grid {
+      display: grid;
+      grid-template-columns: 5fr 6fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    .tool-panel {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 26px;
+    }
+
+    .panel-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 18px;
+      color: var(--text-main);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text-main);
+    }
+
+    .form-helper {
+      display: block;
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .family-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .family-row {
+      background: var(--bg-page);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .family-row.active {
+      border-color: var(--blue-vivid);
+      box-shadow: 0 6px 16px rgba(0, 102, 255, 0.08);
+    }
+
+    .checkbox-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+      min-height: 26px;
+    }
+
+    .checkbox-wrap input[type="checkbox"] {
+      width: 17px;
+      height: 17px;
+      accent-color: var(--blue-vivid);
+      cursor: pointer;
+    }
+
+    .style-select-wrap {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border);
+      display: none;
+    }
+
+    .family-row.active .style-select-wrap {
+      display: block;
+      animation: fadeSlideIn 0.25s ease;
+    }
+
+    .style-pills {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .style-pill {
+      appearance: none;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-page);
+      color: var(--text-sub);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 7px 8px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s ease;
+    }
+
+    .style-pill:hover {
+      border-color: var(--blue-vivid);
+    }
+
+    .style-pill.selected {
+      background: var(--blue-ice);
+      border-color: var(--blue-vivid);
+      color: var(--blue-vivid);
+      font-weight: 700;
+    }
+
+    .two-col-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .text-input {
+      width: 100%;
+      min-height: 48px;
+      padding: 10px 14px;
+      font-size: 15px;
+      font-weight: 500;
+      border: 1.5px solid var(--border-strong);
+      border-radius: var(--radius-md);
+      background: var(--bg-page);
+      color: var(--text-main);
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .text-input:focus {
+      border-color: var(--blue-vivid);
+      box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.14);
+    }
+
+    .unit-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-sub);
+      flex-shrink: 0;
+    }
+
+    .preset-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .preset-btn {
+      border: 1px solid var(--border-strong);
+      background: var(--bg-page);
+      color: var(--text-sub);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .preset-btn:hover {
+      border-color: var(--blue-vivid);
+      color: var(--blue-vivid);
+    }
+
+    .btn-primary {
+      width: 100%;
+      min-height: 52px;
+      padding: 0 22px;
+      border: none;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, #0070ff 0%, #0058e6 100%);
+      color: #ffffff;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 20px rgba(0, 102, 255, 0.22);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(0, 102, 255, 0.3);
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 55%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.26), transparent);
+      animation: sheenCue 3.6s infinite;
+    }
+
+    .error-msg {
+      display: none;
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #b91c1c;
+      font-size: 13px;
+      border-radius: var(--radius-sm);
+    }
+
+    /* 우측 결과 패널 */
+    .result-panel {
+      background: var(--bg-page);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 26px;
+      min-height: 440px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .result-empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+      gap: 14px;
+    }
+
+    .empty-icon-circle {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: var(--blue-ice);
+      color: var(--blue-vivid);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .result-empty-state h3 {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .result-empty-state p {
+      font-size: 14px;
+      max-width: 340px;
+      word-break: keep-all;
+    }
+
+    .result-area {
+      display: none;
+    }
+
+    .result-area.visible {
+      display: block;
+      animation: fadeSlideIn 0.35s ease;
+    }
+
+    .result-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .result-heading {
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .toggle-ko-btn {
+      border: 1px solid var(--border-strong);
+      background: var(--bg-page);
+      color: var(--text-sub);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .toggle-ko-btn.active {
+      background: var(--text-main);
+      color: #ffffff;
+      border-color: var(--text-main);
+    }
+
+    .result-summary-card {
+      background: var(--blue-ice);
+      border: 1px solid var(--blue-border);
+      border-radius: var(--radius-md);
+      padding: 15px;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    .mn-text {
+      color: var(--text-main);
+      font-weight: 500;
+      word-break: keep-all;
+    }
+
+    .ko-sub {
+      display: none;
+      margin-top: 7px;
+      font-size: 12.5px;
+      color: var(--text-sub);
+      background: rgba(255, 255, 255, 0.88);
+      padding: 7px 10px;
+      border-radius: 8px;
+      word-break: keep-all;
+    }
+
+    .show-ko .ko-sub {
+      display: block;
+    }
+
+    .store-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .store-card {
+      background: var(--bg-subtle);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    }
+
+    .store-card:hover {
+      transform: translateY(-2px);
+      background: var(--bg-page);
+      border-color: var(--blue-vivid);
+      box-shadow: 0 8px 20px rgba(0, 102, 255, 0.08);
+    }
+
+    .store-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .store-order-badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 800;
+      color: #ffffff;
+      background: var(--blue-vivid);
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+
+    .store-target {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .store-name {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 10px;
+    }
+
+    .store-detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+
+    .store-detail-block {
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .detail-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--blue-vivid);
+      margin-bottom: 3px;
+    }
+
+    .transparency-box {
+      background: var(--warn-bg);
+      border: 1px solid var(--warn-border);
+      border-radius: var(--radius-md);
+      padding: 13px 15px;
+      font-size: 12.5px;
+      color: var(--warn-text);
+      line-height: 1.6;
+      margin-bottom: 14px;
+    }
+
+    .transparency-box strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .btn-to-cta {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 46px;
+      background: var(--bg-page);
+      border: 1.5px solid var(--blue-vivid);
+      color: var(--blue-vivid);
+      font-size: 14px;
+      font-weight: 800;
+      text-decoration: none;
+      border-radius: var(--radius-md);
+      transition: background-color 0.15s ease;
+    }
+
+    .btn-to-cta:hover {
+      background: var(--blue-ice);
+    }
+
+    /* 6. Proof: PC 가로 배너형 정보 기준 섹션 */
+    .proof-section {
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .proof-banner {
+      background: var(--bg-page);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 32px 36px;
+      display: grid;
+      grid-template-columns: 0.9fr 1.5fr;
+      gap: 32px;
+      align-items: center;
+    }
+
+    .proof-heading {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-top: 8px;
+      word-break: keep-all;
+    }
+
+    .proof-copy {
+      font-size: 16px;
+      color: var(--text-sub);
+      line-height: 1.7;
+      word-break: keep-all;
+    }
+
+    /* 7. Offer & Bottom Email CTA (PC 가로형 등록 폼) */
+    .offer-section {
+      background: linear-gradient(180deg, #ffffff 0%, #f2f7ff 100%);
+      padding: 84px 0 96px;
+    }
+
+    .offer-card {
+      background: var(--bg-page);
+      border: 1.5px solid var(--blue-border);
+      border-radius: var(--radius-xl);
+      padding: 40px;
+      box-shadow: 0 20px 44px rgba(0, 102, 255, 0.08);
+    }
+
+    .offer-text {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+      line-height: 1.5;
+      margin-bottom: 20px;
+      word-break: keep-all;
+      max-width: 780px;
+    }
+
+    .attached-schedule {
+      display: none;
+      background: var(--blue-ice);
+      border: 1px solid var(--blue-border);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--blue-deep);
+      margin-bottom: 18px;
+      word-break: keep-all;
+    }
+
+    .attached-schedule.visible {
+      display: block;
+    }
+
+    .email-form-row {
+      display: flex;
+      align-items: stretch;
+      gap: 12px;
+    }
+
+    .email-form-row .text-input {
+      flex: 1;
+      min-height: 54px;
+    }
+
+    .email-form-row .btn-primary {
+      width: auto;
+      min-width: 280px;
+      min-height: 54px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .cta-success {
+      display: none;
+      margin-top: 16px;
+      padding: 16px 18px;
+      background: var(--success-bg);
+      border: 1px solid var(--success-border);
+      border-radius: var(--radius-md);
+      color: var(--success-text);
+      font-size: 14px;
+      line-height: 1.65;
+      word-break: keep-all;
+    }
+
+    .cta-success.visible {
+      display: block;
+      animation: fadeSlideIn 0.3s ease;
+    }
+
+    footer {
+      padding: 28px 0;
+      background: var(--bg-subtle);
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    /* Keyframes */
+    @keyframes heroFadeUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes floatShirt {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-9px); }
+    }
+
+    @keyframes pulseShadow {
+      0%, 100% { transform: scale(1); opacity: 0.22; }
+      50% { transform: scale(0.88); opacity: 0.13; }
+    }
+
+    @keyframes pulseDot {
+      0% { box-shadow: 0 0 0 0 rgba(147, 197, 253, 0.75); }
+      70% { box-shadow: 0 0 0 8px rgba(147, 197, 253, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(147, 197, 253, 0); }
+    }
+
+    @keyframes bounceCue {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(4px); }
+    }
+
+    @keyframes sheenCue {
+      0%, 70% { left: -100%; }
+      100% { left: 140%; }
+    }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 작은 화면(태블릿/창 축소) 대응 */
+    @media (max-width: 960px) {
+      .hero-grid,
+      .problem-grid,
+      .story-steps-grid,
+      .workbench-grid,
+      .proof-banner {
+        grid-template-columns: 1fr;
+      }
+
+      .story-steps-grid::before {
+        display: none;
+      }
+
+      .hero-visual {
+        order: -1;
+      }
+
+      .shirt-svg {
+        max-width: 240px;
+      }
+
+      .email-form-row {
+        flex-direction: column;
+      }
+
+      .email-form-row .btn-primary {
+        width: 100%;
+      }
+
+      .nav-tag {
+        display: none;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .family-list,
+      .two-col-inputs,
+      .store-detail-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .nav-links {
+        gap: 2px;
+      }
+
+      .nav-pill {
+        font-size: 12px;
+        padding: 5px 8px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 플로팅 내비게이션 (로그인·결제 제외) -->
+  <div class="floating-nav-wrap">
+    <nav class="floating-nav" aria-label="주요 섹션 이동">
+      <a href="#top" class="nav-brand">
+        <span class="nav-logo-badge" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M8.5 4.5C9.5 6 11 6.5 12 6.5C13 6.5 14.5 6 15.5 4.5L20 6.5L21.5 11L18.5 12.5L17.5 10.5V19.5H6.5V10.5L5.5 12.5L2.5 11L4 6.5L8.5 4.5Z" fill="#ffffff" />
+          </svg>
+        </span>
+        <span>몽골어 AI 쇼핑 가이드</span>
+        <span class="nav-tag">로그인·결제 없음</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="#problem" class="nav-pill" data-target="problem">고민</a>
+        <a href="#how" class="nav-pill" data-target="how">이용 방법</a>
+        <a href="#shopping-guide-tool" class="nav-pill" data-target="shopping-guide-tool">체험하기</a>
+        <a href="#proof" class="nav-pill" data-target="proof">정보 기준</a>
+        <a href="#pilot-apply" class="nav-pill" data-target="pilot-apply">체험 신청</a>
+      </div>
+
+      <div class="scroll-progress-bar" aria-hidden="true">
+        <div id="scrollProgressFill" class="scroll-progress-fill"></div>
+      </div>
+    </nav>
+  </div>
+
+  <main id="top">
+    <!-- 1. PC Hero (좌측 빅 히어로 타입 · 우측 원형 받침대 위 심플 티셔츠) -->
+    <section class="hero">
+      <div class="hero-dots" aria-hidden="true"></div>
+
+      <div class="container">
+        <div class="hero-grid">
+          <div>
+            <div class="hero-eyebrow">
+              <span class="live-dot" aria-hidden="true"></span>
+              <span>시범 참여자 모집 · 로그인 및 결제 없음</span>
+            </div>
+
+            <h1 class="hero-big-type">
+              <span class="hero-line">한국 여행 하루,</span>
+              <span class="hero-line">내 옷과 가족 옷을 고르는</span>
+              <span class="hero-line"><span class="hero-highlight">몽골어 AI 쇼핑 가이드</span></span>
+            </h1>
+
+            <p class="hero-sub">
+              가족별 스타일·총예산·쇼핑 가능 시간을 입력하면 매장 후보, 추천 이유, 방문 순서를 몽골어로 제안합니다.
+            </p>
+
+            <div class="hero-actions">
+              <a href="#shopping-guide-tool" class="hero-cta-btn">조건 입력하고 몽골어 추천 보기 ↓</a>
+              <a href="#how" class="hero-secondary-link">이용 방법 보기</a>
+            </div>
+          </div>
+
+          <!-- 우측: 원형 받침대 + 심플 티셔츠 아이콘 -->
+          <div class="hero-visual" aria-hidden="true">
+            <svg class="shirt-svg" viewBox="0 0 220 165" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="pedestalTop" x1="42" y1="90" x2="178" y2="128" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#D9EBFF" />
+                  <stop offset="100%" stop-color="#A8CEFF" />
+                </linearGradient>
+                <linearGradient id="pedestalSide" x1="42" y1="110" x2="178" y2="140" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#FFFFFF" />
+                  <stop offset="100%" stop-color="#DDE9F8" />
+                </linearGradient>
+                <linearGradient id="shirtShadowFold" x1="110" y1="26" x2="160" y2="96" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#F6FAFF" />
+                  <stop offset="100%" stop-color="#DCEAFF" />
+                </linearGradient>
+              </defs>
+
+              <ellipse cx="110" cy="141" rx="76" ry="15" fill="rgba(0, 28, 92, 0.25)" />
+              <path d="M42 108V125C42 137.15 72.4446 147 110 147C147.555 147 178 137.15 178 125V108H42Z" fill="url(#pedestalSide)" />
+              <ellipse cx="110" cy="108" rx="68" ry="22" fill="url(#pedestalTop)" stroke="rgba(255,255,255,0.85)" stroke-width="1.5" />
+              <ellipse class="shirt-shadow" cx="110" cy="108" rx="34" ry="8" fill="#0044B8" />
+
+              <g class="shirt-float">
+                <path d="M93 25C98 31 122 31 127 25C120 20 100 20 93 25Z" fill="#0052D4" />
+                <path d="M93 25C98.5 34.5 121.5 34.5 127 25L154 35L165 58L147 67L141 56V95C141 96.6569 139.657 98 138 98H82C80.3431 98 79 96.6569 79 95V56L73 67L55 58L66 35L93 25Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round" />
+                <path d="M127 25L154 35L165 58L147 67L141 56V95C141 96.6569 139.657 98 138 98H110V32.5C116.5 32.5 123 30 127 25Z" fill="url(#shirtShadowFold)" opacity="0.55" />
+                <path d="M91 26C97 37 123 37 129 26" stroke="#8CC0FF" stroke-width="2.5" stroke-linecap="round" />
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <div class="scroll-cue" aria-hidden="true">
+          <span>아래로 스크롤하여 흐름 보기</span>
+          <span class="scroll-cue-arrow">↓</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Problem (PC 2열 인터랙티브 카드) -->
+    <section id="problem" class="problem-section section-pad">
+      <div class="container story-reveal">
+        <span class="chapter-badge">01 · 문제 공감</span>
+        <h2 class="section-heading">이런 고민이 있다면</h2>
+
+        <div class="problem-grid" id="problemCards">
+          <div class="interactive-card is-active" onclick="activateProblemCard(this)">
+            <div class="card-top-row">
+              <div class="card-icon-box" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="9"></circle>
+                  <polyline points="12 7 12 12 15 14"></polyline>
+                </svg>
+              </div>
+              <span class="card-index">상황 01</span>
+            </div>
+            <p class="card-copy">한국 여행 중 하루 안에 본인과 가족에게 줄 옷을 함께 사려 하시나요?</p>
+          </div>
+
+          <div class="interactive-card" onclick="activateProblemCard(this)">
+            <div class="card-top-row">
+              <div class="card-icon-box" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M8.5 4.5C9.5 6 11 6.5 12 6.5C13 6.5 14.5 6 15.5 4.5L20 6.5L21.5 11L18.5 12.5L17.5 10.5V19.5H6.5V10.5L5.5 12.5L2.5 11L4 6.5L8.5 4.5Z"></path>
+                </svg>
+              </div>
+              <span class="card-index">상황 02</span>
+            </div>
+            <p class="card-copy">가족별 스타일과 총예산에 맞는 매장을 제한된 시간 안에 고르기 어렵습니다.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. How it works (PC 3열 가로 스토리텔링 타임라인) -->
+    <section id="how" class="how-section section-pad">
+      <div class="container story-reveal">
+        <span class="chapter-badge">02 · 이용 방법</span>
+        <h2 class="section-heading">이렇게 간단히 진행됩니다</h2>
+
+        <div class="story-steps-grid" id="storySteps">
+          <div class="story-step-card is-active" onclick="activateStoryStep(this)">
+            <span class="step-badge">1</span>
+            <p class="step-body">로그인이나 결제 없이 가족별 스타일, 총예산, 쇼핑 가능 시간을 입력합니다.</p>
+          </div>
+          <div class="story-step-card" onclick="activateStoryStep(this)">
+            <span class="step-badge">2</span>
+            <p class="step-body">조건에 맞는 매장 후보와 추천 이유, 방문 순서를 몽골어로 확인합니다.</p>
+          </div>
+          <div class="story-step-card" onclick="activateStoryStep(this)">
+            <span class="step-badge">3</span>
+            <p class="step-body">하단에 이메일을 등록해 내 여행 일정에 맞춘 추천 체험을 신청합니다.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. 핵심 기능 1개 실제 작동 영역 (PC 좌우 분할 워크벤치) -->
+    <section id="shopping-guide-tool" class="tool-section section-pad">
+      <div class="container story-reveal">
+        <span class="chapter-badge">03 · 핵심 기능 체험</span>
+        <h2 class="section-heading">내 쇼핑 조건을 입력해 보세요</h2>
+
+        <div class="workbench-grid">
+          <!-- 좌측 입력 패널 -->
+          <div class="tool-panel">
+            <h3 class="panel-title">조건 입력</h3>
+            <form id="guideForm" novalidate>
+              <div class="form-group">
+                <span class="form-label">
+                  1. 누구의 어떤 스타일 옷을 사나요?
+                  <span class="form-helper">대상 체크 후 원하는 스타일을 선택해 주세요.</span>
+                </span>
+
+                <div class="family-list" id="familyList">
+                  <!-- 본인 -->
+                  <div class="family-row active" data-member="self">
+                    <label class="checkbox-wrap">
+                      <input type="checkbox" checked onchange="toggleMember(this)" />
+                      <span>본인 (내 옷)</span>
+                    </label>
+                    <div class="style-select-wrap">
+                      <div class="style-pills">
+                        <button type="button" class="style-pill selected" data-style="casual" onclick="selectStyle(this)">캐주얼 · 편한 옷</button>
+                        <button type="button" class="style-pill" data-style="neat" onclick="selectStyle(this)">단정 · 출근복</button>
+                        <button type="button" class="style-pill" data-style="warm" onclick="selectStyle(this)">따뜻한 외투 · 보온</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 배우자 -->
+                  <div class="family-row" data-member="spouse">
+                    <label class="checkbox-wrap">
+                      <input type="checkbox" onchange="toggleMember(this)" />
+                      <span>배우자</span>
+                    </label>
+                    <div class="style-select-wrap">
+                      <div class="style-pills">
+                        <button type="button" class="style-pill selected" data-style="casual" onclick="selectStyle(this)">캐주얼 · 편한 옷</button>
+                        <button type="button" class="style-pill" data-style="neat" onclick="selectStyle(this)">단정 · 출근복</button>
+                        <button type="button" class="style-pill" data-style="warm" onclick="selectStyle(this)">따뜻한 외투 · 보온</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 부모님 -->
+                  <div class="family-row active" data-member="parents">
+                    <label class="checkbox-wrap">
+                      <input type="checkbox" checked onchange="toggleMember(this)" />
+                      <span>부모님</span>
+                    </label>
+                    <div class="style-select-wrap">
+                      <div class="style-pills">
+                        <button type="button" class="style-pill" data-style="casual" onclick="selectStyle(this)">편한 일상복</button>
+                        <button type="button" class="style-pill" data-style="neat" onclick="selectStyle(this)">단정 · 외출복</button>
+                        <button type="button" class="style-pill selected" data-style="warm" onclick="selectStyle(this)">따뜻한 외투 · 아웃도어</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 아이 -->
+                  <div class="family-row" data-member="child">
+                    <label class="checkbox-wrap">
+                      <input type="checkbox" onchange="toggleMember(this)" />
+                      <span>아이 · 조카</span>
+                    </label>
+                    <div class="style-select-wrap">
+                      <div class="style-pills">
+                        <button type="button" class="style-pill selected" data-style="kids" onclick="selectStyle(this)">아동복 · 선물용</button>
+                        <button type="button" class="style-pill" data-style="warm" onclick="selectStyle(this)">따뜻한 아동 외투</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="two-col-inputs">
+                <!-- 총예산 -->
+                <div class="form-group">
+                  <label class="form-label" for="budgetInput">2. 총예산 (원)</label>
+                  <div class="input-row">
+                    <input id="budgetInput" class="text-input" type="number" min="10000" step="10000" value="400000" placeholder="예: 400000" />
+                    <span class="unit-label">원</span>
+                  </div>
+                  <div class="preset-row">
+                    <button type="button" class="preset-btn" onclick="setBudget(200000)">20만</button>
+                    <button type="button" class="preset-btn" onclick="setBudget(400000)">40만</button>
+                    <button type="button" class="preset-btn" onclick="setBudget(600000)">60만</button>
+                    <button type="button" class="preset-btn" onclick="setBudget(1000000)">100만</button>
+                  </div>
+                </div>
+
+                <!-- 쇼핑 가능 시간 -->
+                <div class="form-group">
+                  <label class="form-label" for="hoursInput">3. 쇼핑 가능 시간</label>
+                  <div class="input-row">
+                    <input id="hoursInput" class="text-input" type="number" min="1" max="12" step="1" value="4" placeholder="예: 4" />
+                    <span class="unit-label">시간</span>
+                  </div>
+                  <div class="preset-row">
+                    <button type="button" class="preset-btn" onclick="setHours(2)">2시간</button>
+                    <button type="button" class="preset-btn" onclick="setHours(4)">4시간</button>
+                    <button type="button" class="preset-btn" onclick="setHours(6)">6시간</button>
+                    <button type="button" class="preset-btn" onclick="setHours(8)">8시간</button>
+                  </div>
+                </div>
+              </div>
+
+              <button type="submit" class="btn-primary">몽골어 매장 추천·방문 순서 보기</button>
+              <div id="formError" class="error-msg" role="alert"></div>
+            </form>
+          </div>
+
+          <!-- 우측 실시간 출력 패널 -->
+          <div class="result-panel" aria-live="polite">
+            <div id="resultEmptyState" class="result-empty-state">
+              <div class="empty-icon-circle" aria-hidden="true">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                  <path d="M8.5 4.5C9.5 6 11 6.5 12 6.5C13 6.5 14.5 6 15.5 4.5L20 6.5L21.5 11L18.5 12.5L17.5 10.5V19.5H6.5V10.5L5.5 12.5L2.5 11L4 6.5L8.5 4.5Z" fill="currentColor" />
+                </svg>
+              </div>
+              <h3>몽골어 추천 결과가 여기에 표시됩니다</h3>
+              <p>왼쪽에서 가족별 스타일, 총예산, 쇼핑 가능 시간을 선택한 뒤 <strong>'몽골어 매장 추천·방문 순서 보기'</strong> 버튼을 눌러 보세요.</p>
+            </div>
+
+            <div id="resultArea" class="result-area">
+              <div class="result-top">
+                <h3 class="result-heading">몽골어 추천 결과</h3>
+                <button type="button" id="toggleKoBtn" class="toggle-ko-btn" onclick="toggleKoreanHelper()">한국어 뜻 함께 보기</button>
+              </div>
+
+              <div id="resultSummary" class="result-summary-card"></div>
+              <div id="storeCards" class="store-cards"></div>
+
+              <div class="transparency-box">
+                <strong>매장 정보 투명성 안내</strong>
+                • 출처: 주요 의류 브랜드 일반 취급 품목 기준 (시범 예시)<br />
+                • 확인 시점: 개별 지점 영업시간 및 실시간 재고 미확인 [확인 필요]<br />
+                • 광고·제휴 여부: 없음 (광고 및 유료 제휴 미포함)
+              </div>
+
+              <a href="#pilot-apply" class="btn-to-cta">이 조건으로 내 실제 여행 일정 체험 신청하기 ↓</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Proof (PC 가로 배너형) -->
+    <section id="proof" class="proof-section section-pad">
+      <div class="container story-reveal">
+        <div class="proof-banner">
+          <div>
+            <span class="chapter-badge">04 · 정보 기준</span>
+            <h2 class="proof-heading">정직한 기준만 표시합니다</h2>
+          </div>
+          <p class="proof-copy">
+            추천에 사용한 매장 정보의 출처, 확인 시점, 광고·제휴 여부를 결과와 함께 표시할 계획입니다. 실제 고객 후기와 추천 효과는 아직 확인 전이므로 별도로 기재하지 않았습니다.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Offer & 7. CTA (하단 이메일 등록 버튼) -->
+    <section id="pilot-apply" class="offer-section">
+      <div class="container story-reveal">
+        <div class="offer-card">
+          <span class="chapter-badge">05 · 시범 참여 신청</span>
+          <p class="offer-text">
+            시범 참여자에게 본인의 여행 일정에 맞춘 몽골어 매장 추천과 방문 순서를 제공합니다. (로그인 및 결제 없이 참여 가능)
+          </p>
+
+          <div id="attachedSchedule" class="attached-schedule"></div>
+
+          <form id="emailForm" novalidate>
+            <div class="email-form-row">
+              <input
+                id="emailInput"
+                class="text-input"
+                type="email"
+                placeholder="추천 결과를 받을 이메일 주소를 입력하세요"
+                aria-label="추천 결과를 받을 이메일 주소"
+                required
+              />
+              <button type="submit" class="btn-primary">내 쇼핑 일정으로 추천 체험 신청하기</button>
+            </div>
+            <div id="emailError" class="error-msg" role="alert"></div>
+          </form>
+
+          <div id="ctaSuccess" class="cta-success" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer-inner">
+      <span>몽골어 AI 쇼핑 가이드 · 시범 MVP</span>
+      <span>한국 여행 중 하루 안에 내 옷과 가족 옷을 함께 구매하려는 몽골인 관광객을 위한 서비스</span>
+    </div>
+  </footer>
+
+  <script>
+    let lastScheduleSummaryKo = null;
+
+    // 1. 스크롤 스토리텔링 진행률 & 플로팅 네비게이션 Scrollspy
+    function updateScrollUI() {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = docHeight > 0 ? Math.min(100, Math.max(0, (scrollTop / docHeight) * 100)) : 0;
+      document.getElementById('scrollProgressFill').style.width = progress + '%';
+
+      const targets = ['problem', 'how', 'shopping-guide-tool', 'proof', 'pilot-apply'];
+      let activeId = null;
+
+      targets.forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        if (rect.top <= 200) {
+          activeId = id;
+        }
+      });
+
+      document.querySelectorAll('.nav-pill').forEach((pill) => {
+        if (pill.getAttribute('data-target') === activeId) {
+          pill.classList.add('active');
+        } else {
+          pill.classList.remove('active');
+        }
+      });
+    }
+
+    window.addEventListener('scroll', updateScrollUI, { passive: true });
+    window.addEventListener('load', updateScrollUI);
+
+    // 2. 스크롤 스토리텔링 Reveal
+    const revealObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+          }
+        });
+      },
+      { threshold: 0.14 }
+    );
+
+    document.querySelectorAll('.story-reveal').forEach((el) => revealObserver.observe(el));
+
+    // 3. 인터랙티브 카드 제어
+    function activateProblemCard(card) {
+      document.querySelectorAll('#problemCards .interactive-card').forEach((c) => c.classList.remove('is-active'));
+      card.classList.add('is-active');
+    }
+
+    function activateStoryStep(stepCard) {
+      document.querySelectorAll('#storySteps .story-step-card').forEach((s) => s.classList.remove('is-active'));
+      stepCard.classList.add('is-active');
+    }
+
+    // 4. 핵심 기능 입력 제어
+    function toggleMember(checkbox) {
+      const row = checkbox.closest('.family-row');
+      if (checkbox.checked) {
+        row.classList.add('active');
+      } else {
+        row.classList.remove('active');
+      }
+    }
+
+    function selectStyle(btn) {
+      const wrap = btn.closest('.style-pills');
+      wrap.querySelectorAll('.style-pill').forEach((el) => el.classList.remove('selected'));
+      btn.classList.add('selected');
+    }
+
+    function setBudget(amount) {
+      document.getElementById('budgetInput').value = amount;
+    }
+
+    function setHours(hours) {
+      document.getElementById('hoursInput').value = hours;
+    }
+
+    function toggleKoreanHelper() {
+      const resultArea = document.getElementById('resultArea');
+      const btn = document.getElementById('toggleKoBtn');
+      resultArea.classList.toggle('show-ko');
+      btn.classList.toggle('active');
+    }
+
+    const MEMBER_LABELS = {
+      self: { ko: '본인', mn: 'Өөртөө' },
+      spouse: { ko: '배우자', mn: 'Ханьдаа' },
+      parents: { ko: '부모님', mn: 'Аав ээждээ' },
+      child: { ko: '아이', mn: 'Хүүхдэдээ' }
+    };
+
+    const STYLE_LABELS = {
+      casual: { ko: '캐주얼·편한 옷', mn: 'өдөр тутмын энгийн загвар' },
+      neat: { ko: '단정·출근복', mn: 'цэвэрхэн, ажил хэрэгч загвар' },
+      warm: { ko: '따뜻한 외투·보온', mn: 'дулаан гадуур хувцас' },
+      kids: { ko: '아동복·선물용', mn: 'хүүхдийн болон бэлгийн хувцас' }
+    };
+
+    function buildStorePlan(selections, budget, hours) {
+      const styles = selections.map((s) => s.style);
+      const members = selections.map((s) => s.member);
+      const hasCasualOrMultiple = styles.includes('casual') || selections.length >= 2;
+      const hasNeat = styles.includes('neat');
+      const hasWarm = styles.includes('warm');
+      const hasKids = members.includes('child') || styles.includes('kids');
+      const isCompactBudget = budget <= 250000;
+
+      const candidates = [];
+
+      if (hasCasualOrMultiple || isCompactBudget) {
+        const matchedMembers = selections
+          .filter((s) => s.style === 'casual' || s.member === 'self' || s.member === 'spouse' || s.member === 'child')
+          .map((s) => MEMBER_LABELS[s.member]);
+
+        const targetTextMn = matchedMembers.length > 0
+          ? matchedMembers.map((m) => m.mn).join(', ')
+          : selections.map((s) => MEMBER_LABELS[s.member].mn).join(', ');
+
+        const targetTextKo = matchedMembers.length > 0
+          ? matchedMembers.map((m) => m.ko).join(', ')
+          : selections.map((s) => MEMBER_LABELS[s.member].ko).join(', ');
+
+        candidates.push({
+          nameMn: 'TOPTEN10 эсвэл SPAO (Солонгос SPA дэлгүүр)',
+          nameKo: '탑텐 또는 스파오 (한국 SPA 의류 매장)',
+          targetMn: `Зориулалт: ${targetTextMn}`,
+          targetKo: `추천 대상: ${targetTextKo}`,
+          reasonMn: 'Нэг дор өдөр тутмын энгийн хувцас, дулаан дотуур хувцас болон гэр бүлийн хувцсыг боломжийн үнээр харьцуулж авах боломжтой.',
+          reasonKo: '한 곳에서 일상복, 보온 이너웨어, 가족 옷을 부담 없는 가격대로 비교해 고를 수 있습니다.',
+          orderNoteMn: 'Эхлээд олон хүний хувцас нэг дор байгаа дэлгүүрээр орвол цагаа хэмнэж, нийт төсвөө хуваарилахад амар байна.',
+          orderNoteKo: '먼저 여러 가족의 옷을 한곳에서 볼 수 있는 매장에 들러 시간을 아끼고 총예산을 배분하기 좋습니다.'
+        });
+      }
+
+      if (hasNeat) {
+        const neatMembers = selections.filter((s) => s.style === 'neat').map((s) => MEMBER_LABELS[s.member]);
+        candidates.push({
+          nameMn: 'MUSINSA STANDARD эсвэл 8seconds',
+          nameKo: '무신사 스탠다드 또는 에잇세컨즈',
+          targetMn: `Зориулалт: ${neatMembers.map((m) => m.mn).join(', ')}`,
+          targetKo: `추천 대상: ${neatMembers.map((m) => m.ko).join(', ')}`,
+          reasonMn: 'Цэвэрхэн өдөр тутмын болон ажил хэрэгч загварын цамц, өмд, пиджакийн сонголт тодорхой тул хурдан сонгоход тохиромжтой.',
+          reasonKo: '단정하고 깔끔한 셔츠, 바지, 재킷 등 기본 의류 구성이 명확해 빠르게 고르기 좋습니다.',
+          orderNoteMn: 'Үндсэн хувцасны дараа цэвэрхэн загварын хувцсыг үлдсэн төсөвтөө тааруулан сонгохыг санал болголоо.',
+          orderNoteKo: '기본 의류를 먼저 본 뒤 남은 예산에 맞춰 단정한 스타일의 옷을 고르는 순서로 배치했습니다.'
+        });
+      }
+
+      if (hasKids && (hours >= 3 || candidates.length === 0)) {
+        candidates.push({
+          nameMn: 'Хүүхдийн хувцасны дэлгүүр (Ж: TOPTEN KIDS, Moimoln)',
+          nameKo: '아동복 전문 매장 (예: 탑텐 키즈, 모이몰른)',
+          targetMn: 'Зориулалт: Хүүхдэдээ / бэлгийн хувцас',
+          targetKo: '추천 대상: 아이 · 선물용',
+          reasonMn: 'Хүүхдийн биед эвтэйхэн материалтай, өдөр тутмын болон бэлэглэхэд тохиромжтой хувцас төвлөрсөн байдаг.',
+          reasonKo: '아이 피부에 편한 소재의 일상복과 선물용 의류가 모여 있어 고르기 수월합니다.',
+          orderNoteMn: 'Хүүхдийн хувцас нь хэмжээ, загварыг тусад нь шалгах шаардлагатай тул дунд ээлжинд төлөвлөлөө.',
+          orderNoteKo: '아이 옷은 치수와 디자인을 따로 확인해야 하므로 중간 순서에 배치했습니다.'
+        });
+      }
+
+      if (hasWarm) {
+        const warmMembers = selections.filter((s) => s.style === 'warm').map((s) => MEMBER_LABELS[s.member]);
+        candidates.push({
+          nameMn: isCompactBudget
+            ? 'SPA дэлгүүрийн өвлийн хэсэг эсвэл аутлет аутдоор'
+            : 'Солонгос аутдоор дэлгүүр (Ж: K2, Nepa, Black Yak)',
+          nameKo: isCompactBudget
+            ? 'SPA 겨울 아우터 코너 또는 아울렛 아웃도어 매장'
+            : '한국 아웃도어 매장 (예: K2, 네파, 블랙야크)',
+          targetMn: `Зориулалт: ${warmMembers.map((m) => m.mn).join(', ')}`,
+          targetKo: `추천 대상: ${warmMembers.map((m) => m.ko).join(', ')}`,
+          reasonMn: 'Салхи, хүйтнээс хамгаалах дулаан гадуур хувцсыг гэр бүлийн гишүүдийн хэрэгцээнд тааруулан сонгох боломжтой.',
+          reasonKo: '바람과 추위를 막아주는 따뜻한 외투를 가족 구성원 필요에 맞춰 고를 수 있습니다.',
+          orderNoteMn: 'Дулаан гадуур хувцас овор ихтэй тул хамгийн сүүлд авбал дэлгүүр хэсэхэд биед ачаалал багатай.',
+          orderNoteKo: '두꺼운 외투는 부피가 크므로 가장 마지막 순서에 구매해야 이동할 때 부담이 적습니다.'
+        });
+      }
+
+      let maxStops = 3;
+      if (hours <= 2) maxStops = 2;
+      else if (hours >= 6) maxStops = 4;
+
+      const finalStops = candidates.slice(0, maxStops);
+      if (finalStops.length === 0) {
+        finalStops.push({
+          nameMn: 'TOPTEN10 эсвэл SPAO (Нийтийн SPA дэлгүүр)',
+          nameKo: '탑텐 또는 스파오 (종합 의류 매장)',
+          targetMn: `Зориулалт: ${selections.map((s) => MEMBER_LABELS[s.member].mn).join(', ')}`,
+          targetKo: `추천 대상: ${selections.map((s) => MEMBER_LABELS[s.member].ko).join(', ')}`,
+          reasonMn: 'Төрөл бүрийн загварыг нэг дороос үзэж цаг хэмнэх боломжтой.',
+          reasonKo: '다양한 스타일을 한곳에서 보고 시간을 아낄 수 있습니다.',
+          orderNoteMn: 'Хязгаарлагдмал цагт багтаан нэг дэлгүүрээс эхлэхийг санал болголоо.',
+          orderNoteKo: '제한된 시간 안에 한 매장에서 먼저 살펴보는 것을 제안합니다.'
+        });
+      }
+
+      return finalStops;
+    }
+
+    document.getElementById('guideForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const errorBox = document.getElementById('formError');
+      errorBox.style.display = 'none';
+
+      const selections = [];
+      document.querySelectorAll('.family-row').forEach((row) => {
+        const cb = row.querySelector('input[type="checkbox"]');
+        if (cb.checked) {
+          const member = row.getAttribute('data-member');
+          const selectedBtn = row.querySelector('.style-pill.selected');
+          const style = selectedBtn ? selectedBtn.getAttribute('data-style') : 'casual';
+          selections.push({ member, style });
+        }
+      });
+
+      const budget = Number(document.getElementById('budgetInput').value);
+      const hours = Number(document.getElementById('hoursInput').value);
+
+      if (selections.length === 0) {
+        errorBox.textContent = '최소 1명 이상의 가족 구성원과 스타일을 선택해 주세요.';
+        errorBox.style.display = 'block';
+        return;
+      }
+
+      if (!budget || budget < 10000) {
+        errorBox.textContent = '총예산을 10,000원 이상으로 입력해 주세요.';
+        errorBox.style.display = 'block';
+        return;
+      }
+
+      if (!hours || hours < 1 || hours > 12) {
+        errorBox.textContent = '쇼핑 가능 시간을 1~12시간 사이로 입력해 주세요.';
+        errorBox.style.display = 'block';
+        return;
+      }
+
+      const stops = buildStorePlan(selections, budget, hours);
+      const formattedBudget = budget.toLocaleString('ko-KR');
+
+      const selectionTextMn = selections
+        .map((s) => `${MEMBER_LABELS[s.member].mn} (${STYLE_LABELS[s.style].mn})`)
+        .join(', ');
+
+      const selectionTextKo = selections
+        .map((s) => `${MEMBER_LABELS[s.member].ko}(${STYLE_LABELS[s.style].ko})`)
+        .join(', ');
+
+      const timeNoteMn = hours <= 2
+        ? `Боломжит ${hours} цагт багтаахын тулд ${stops.length} дэлгүүрийг дарааллууллаа.`
+        : `${hours} цагийн хугацаанд яарахгүйгээр ${stops.length} дэлгүүрээр дараалан зочлохыг санал болголоо.`;
+
+      const timeNoteKo = hours <= 2
+        ? `가능 시간 ${hours}시간 안에 맞추기 위해 ${stops.length}곳으로 방문 순서를 줄였습니다.`
+        : `${hours}시간 동안 무리 없이 ${stops.length}곳을 순서대로 들를 수 있도록 구성했습니다.`;
+
+      document.getElementById('resultSummary').innerHTML = `
+        <div class="mn-text">
+          <strong>Таны нөхцөл:</strong> ${selectionTextMn}<br />
+          <strong>Нийт төсөв:</strong> ${formattedBudget} вон · <strong>Хугацаа:</strong> ${hours} цаг<br />
+          ${timeNoteMn}
+        </div>
+        <div class="ko-sub">
+          입력 조건: ${selectionTextKo} / 총예산 ${formattedBudget}원 / ${hours}시간 — ${timeNoteKo}
+        </div>
+      `;
+
+      const cardsContainer = document.getElementById('storeCards');
+      cardsContainer.innerHTML = stops
+        .map((stop, idx) => `
+          <div class="store-card">
+            <div class="store-header">
+              <span class="store-order-badge">${idx + 1}-р зогсоол (${idx + 1}번째 방문)</span>
+              <span class="store-target">${stop.targetMn}</span>
+            </div>
+            <div class="store-name">${stop.nameMn}</div>
+            <div class="ko-sub" style="margin-bottom:10px;">${stop.nameKo} · ${stop.targetKo}</div>
+
+            <div class="store-detail-grid">
+              <div class="store-detail-block">
+                <span class="detail-label">Санал болгож буй шалтгаан (추천 이유)</span>
+                <div class="mn-text">${stop.reasonMn}</div>
+                <div class="ko-sub">${stop.reasonKo}</div>
+              </div>
+
+              <div class="store-detail-block">
+                <span class="detail-label">Зочлох дараалал (방문 순서 이유)</span>
+                <div class="mn-text">${stop.orderNoteMn}</div>
+                <div class="ko-sub">${stop.orderNoteKo}</div>
+              </div>
+            </div>
+          </div>
+        `)
+        .join('');
+
+      document.getElementById('resultEmptyState').style.display = 'none';
+      const resultArea = document.getElementById('resultArea');
+      resultArea.classList.add('visible');
+
+      lastScheduleSummaryKo = `${selectionTextKo} / 총예산 ${formattedBudget}원 / ${hours}시간`;
+      const attachedBox = document.getElementById('attachedSchedule');
+      attachedBox.textContent = `방금 입력한 조건이 신청에 함께 포함됩니다: ${lastScheduleSummaryKo}`;
+      attachedBox.classList.add('visible');
+
+      if (window.innerWidth <= 960) {
+        resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    });
+
+    // 5. 하단 이메일 등록 (CTA) 처리
+    document.getElementById('emailForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const emailInput = document.getElementById('emailInput');
+      const emailError = document.getElementById('emailError');
+      const ctaSuccess = document.getElementById('ctaSuccess');
+
+      emailError.style.display = 'none';
+      ctaSuccess.classList.remove('visible');
+
+      const email = emailInput.value.trim();
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      if (!email || !emailRegex.test(email)) {
+        emailError.textContent = '올바른 이메일 주소를 입력해 주세요.';
+        emailError.style.display = 'block';
+        emailInput.focus();
+        return;
+      }
+
+      const conditionLine = lastScheduleSummaryKo
+        ? `<br />• 함께 등록된 조건: ${lastScheduleSummaryKo}`
+        : `<br />• 위에서 쇼핑 조건을 먼저 입력하시면 해당 일정도 함께 기록됩니다.`;
+
+      ctaSuccess.innerHTML = `
+        <strong>시범 체험 신청이 접수되었습니다.</strong><br />
+        • 등록 이메일: ${email}${conditionLine}<br />
+        <span style="font-size:12px; opacity:0.85;">※ 본 화면은 시범 MVP 프로토타입으로, 실제 서버 연동 시 입력하신 여행 일정 기준 몽골어 추천안이 전달됩니다.</span>
+      `;
+      ctaSuccess.classList.add('visible');
+      emailInput.value = '';
+    });
+  </script>
+</body>
+</html>
